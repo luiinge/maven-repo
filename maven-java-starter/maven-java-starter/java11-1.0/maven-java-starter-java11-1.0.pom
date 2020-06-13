@@ -1,0 +1,205 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>maven-java-starter</groupId>
+    <artifactId>maven-java-starter</artifactId>
+    <version>java11-1.0</version>
+    <packaging>pom</packaging>
+
+    <name>Maven Java starter</name>
+    <description>Base configuration for Java 11 projects build with Maven</description>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://repository.jboss.org/licenses/mit.txt</url>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/luiinge/maven-java-starter/issues</url>
+    </issueManagement>
+
+
+    <properties>
+        <!-- always use UTF-8 encoding -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- build versions -->
+        <java.version>11</java.version>
+        <maven.compiler.version>3.8.0</maven.compiler.version>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <!-- logging api using Slf4j -->
+        <slf4j-api.version>1.7.30</slf4j-api.version>
+        <!-- testing with JUnit 4 + Hamcrest + AssertJ -->
+        <junit.version>4.13-rc-2</junit.version>
+        <hamcrest.version>2.2</hamcrest.version>
+        <log4j.version>2.13.0</log4j.version>
+        <assertj.version>3.16.1</assertj.version>
+        <!--  use Surefire + Failsafe + JaCoCo for test report and coverage -->
+        <maven.surefire.plugin>2.18.1</maven.surefire.plugin>
+        <maven.failsafe.plugin>2.18.1</maven.failsafe.plugin>
+        <jacoco.version>0.8.2</jacoco.version>
+        <!-- generate source code jar -->
+        <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
+
+    </properties>
+
+
+    <dependencies>
+        <!-- api dependencies -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version><!--$NO-MVN-MAN-VER$ -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- in case log4j-slf4j-impl is used outside test, remove its dependency
+                with slf4j-api, otherwise could conflict with the declared api version -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+    <build>
+        <plugins>
+            <!-- specific version of maven compiler, since Java modules are not well
+                managed in previous versions. Also, activate lint=all ) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.version}</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <verbose>${verbose}</verbose>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <!-- Surefire with JaCoCo agent -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin}</version>
+                <configuration>
+                    <argLine>
+                        ${surefireJacocoAgent} -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+                        --illegal-access=permit
+                    </argLine>
+                </configuration>
+            </plugin>
+            <!-- Failsafe with JaCoCo agent -->
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.plugin}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>
+                                ${failsafeJacocoAgent} -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+                                --illegal-access=permit
+                            </argLine>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- JaCoCo coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>pre-unit-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                            <propertyName>surefireJacocoAgent</propertyName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pre-integration-test</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <destFile>${project.build.directory}/jacoco-it.exec</destFile>
+                            <propertyName>failsafeJacocoAgent</propertyName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- generate additional jar with sources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven.source.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
