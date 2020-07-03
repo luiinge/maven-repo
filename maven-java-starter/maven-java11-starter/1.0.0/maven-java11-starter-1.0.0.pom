@@ -4,12 +4,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>maven-java-starter</groupId>
-    <artifactId>maven-java-starter</artifactId>
-    <version>java11-1.0</version>
+    <artifactId>maven-java11-starter</artifactId>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <name>Maven Java starter</name>
     <description>Base configuration for Java 11 projects build with Maven</description>
+    <url>https://github.com/luiinge/maven-java-starter/</url>
+    <inceptionYear>2020</inceptionYear>
 
     <licenses>
         <license>
@@ -25,29 +27,32 @@
 
 
     <properties>
-        <!-- always use UTF-8 encoding -->
+        <!-- properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- build versions -->
         <java.version>11</java.version>
+        <project.docdir>${project.build.directory}/doc</project.docdir>
+        <project.docdir.javadoc>${project.docdir}/apidocs</project.docdir.javadoc>
+        <project.docdir.coverage>${project.docdir}/coverage</project.docdir.coverage>
+        <!-- dependencies -->
+        <slf4j-api.version>1.7.30</slf4j-api.version>
+        <junit.version>4.13</junit.version>
+        <hamcrest.version>2.2</hamcrest.version>
+        <log4j.version>2.13.0</log4j.version>
+        <assertj.version>3.16.1</assertj.version>
+        <!-- build versions -->
         <maven.compiler.version>3.8.0</maven.compiler.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <!-- logging api using Slf4j -->
-        <slf4j-api.version>1.7.30</slf4j-api.version>
-        <!-- testing with JUnit 4 + Hamcrest + AssertJ -->
-        <junit.version>4.13-rc-2</junit.version>
-        <hamcrest.version>2.2</hamcrest.version>
-        <log4j.version>2.13.0</log4j.version>
-        <assertj.version>3.16.1</assertj.version>
-        <!--  use Surefire + Failsafe + JaCoCo for test report and coverage -->
         <maven.surefire.plugin>2.18.1</maven.surefire.plugin>
         <maven.failsafe.plugin>2.18.1</maven.failsafe.plugin>
         <jacoco.version>0.8.2</jacoco.version>
-        <!-- generate source code jar -->
+        <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
         <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
-
+        <maven.javadoc.plugin.version>3.0.0</maven.javadoc.plugin.version> <!-- with 3.2.0 doesn't work! -->
+        <surefire.report.version>3.0.0-M5</surefire.report.version>
+        <maven.info.reports.version>3.1.0</maven.info.reports.version>
     </properties>
 
 
@@ -106,6 +111,10 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+
+
+
 
 
     <build>
@@ -185,7 +194,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- generate additional jar with sources -->
+            <!-- Generate additional jar with sources -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -200,6 +209,131 @@
             </plugin>
         </plugins>
     </build>
+
+
+
+
+    <profiles>
+        <!-- Generate Javadoc and test reports When called with -Dgenerate.doc -->
+        <profile>
+            <id>generate-doc</id>
+            <activation>
+                <property>
+                    <name>generate.doc</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Clean documentation data -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>${maven.clean.plugin.version}</version>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.docdir}</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <!-- Generate Javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven.javadoc.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-javadoc</id>
+                                <goals>
+                                    <goal>javadoc</goal>
+                                </goals>
+                                <phase>process-sources</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <show>public</show>
+                            <encoding>${project.reporting.outputEncoding}</encoding>
+                            <excludePackageNames>*.internal;*.impl</excludePackageNames>
+                            <quiet>true</quiet>
+                            <noqualifier>all</noqualifier>
+                            <reportOutputDirectory>${project.docdir.javadoc}</reportOutputDirectory>
+                            <notimestamp>true</notimestamp>
+                        </configuration>
+                    </plugin>
+                    <!-- Generate JaCoCo coverage report -->
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-jacoco-report</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.docdir.coverage}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Generate Surefire report -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${surefire.report.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-surefire-report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report-only</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.docdir}</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>generate-failsafe-report</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>failsafe-report-only</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.docdir}</outputDirectory>
+                                </configuration>
+                            </execution>
+
+                        </executions>
+                    </plugin>
+                    <!-- Generate general info reports -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-project-info-reports-plugin</artifactId>
+                        <version>${maven.info.reports.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-info-report</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.docdir}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+
+
+
 
 </project>
 
