@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>11</java.version>
-        <project.docdir>${project.build.directory}/doc</project.docdir>
+        <project.docdir>${project.basedir}/docs</project.docdir>
         <project.docdir.javadoc>${project.docdir}/apidocs</project.docdir.javadoc>
         <project.docdir.coverage>${project.docdir}/coverage</project.docdir.coverage>
         <!-- dependencies -->
